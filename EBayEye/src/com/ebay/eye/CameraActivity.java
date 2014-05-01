@@ -16,9 +16,11 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.WindowManager;
+import android.widget.RemoteViews;
 
-import com.google.android.glass.app.Card;
-import com.google.android.glass.timeline.TimelineManager;
+import com.google.android.glass.timeline.LiveCard;
+import com.google.android.glass.timeline.LiveCard.PublishMode;
 
 /**
  * Camera preview
@@ -26,13 +28,16 @@ import com.google.android.glass.timeline.TimelineManager;
 public class CameraActivity extends Activity {
 	private CameraPreview _cameraPreview;
 	private Camera _camera;
+	private RemoteViews _remoteViews;
 
 	private Context _context = this;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		android.os.Debug.waitForDebugger();
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		_remoteViews = new RemoteViews(_context.getPackageName(), R.layout.my_layout);
 		_cameraPreview = new CameraPreview(this);
 		setContentView(_cameraPreview);
 	}
@@ -62,8 +67,8 @@ public class CameraActivity extends Activity {
 
 	class SavePicture implements Camera.PictureCallback {
 
-		public final Integer CLIENT_API_ID = 42865;
-		public final String CLIENT_API_KEY = "502cbb30e3";
+		public final Integer CLIENT_API_ID = 43023;
+		public final String CLIENT_API_KEY = "8dcc2ca356";
 
 		private static final String TAG = "TestApi";
 
@@ -79,17 +84,18 @@ public class CameraActivity extends Activity {
 				if (data != null) {
 					Integer status = data.getInt(ItraffApi.STATUS, -1);
 					String response = data.getString(ItraffApi.RESPONSE);
+					
 					Log.d("status", status + "");
 					Log.d("respoonse", response);
-					Card photoCard = new Card(_context);
-					if (response.contains("i_533af5bc21df9")) {
-						photoCard.setText("Price for red santa on eBay is 3$");
-					} else if (response.contains("i_533af5b648802")) {
-						photoCard.setText("Price for grey horse on eBay is 4$");
-					} else {
-						photoCard.setText("Item not found on eBay");
+					LiveCard photoCard = new LiveCard(_context,TAG);
+					photoCard.setViews(_remoteViews);
+					photoCard.setDirectRenderingEnabled(true);
+					if (response.contains("1")) {
+						Log.d("Result","Price for rubix cube on ebay is 3$");
+					}else {
+						Log.d("Result","Item not found on eBay");
 					}
-					TimelineManager.from(_context).insert(photoCard);
+					photoCard.publish(PublishMode.SILENT);
 				}
 			}
 		};
